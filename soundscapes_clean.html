@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Jugement de paysages sonores</title>
+
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+  <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background: white;
+      color: black;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .jspsych-display-element { background: white; }
+    .jspsych-content { max-width: 860px; }
+
+    .panel {
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .panel.center { text-align: center; }
+
+    h1, h2 { text-align: center; }
+
+    .field { margin: 1.2rem 0; }
+
+    .field > label,
+    .q-label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.45rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      max-width: 420px;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #999;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .radio-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem 1.2rem;
+      align-items: center;
+    }
+
+    .radio-row label {
+      display: inline-flex;
+      gap: 0.35rem;
+      align-items: center;
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    .btn-std, .jspsych-btn {
+      margin-top: 1.5rem;
+      padding: 0.65rem 2rem;
+      background: white;
+      color: black;
+      border: 2px solid black;
+      font-size: 1rem;
+      font-family: Arial, Helvetica, sans-serif;
+      cursor: pointer;
+    }
+
+    .btn-std:hover:not(:disabled),
+    .jspsych-btn:hover:not(:disabled) {
+      background: black;
+      color: white;
+    }
+
+    .btn-std:disabled,
+    .jspsych-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      background: white;
+      color: black;
+    }
+
+    .error {
+      color: #b00000;
+      min-height: 1.2rem;
+      margin-top: 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      color: #555;
+      margin-top: 0.8rem;
+      font-size: 0.95rem;
+      min-height: 1.2rem;
+    }
+
+    .sound-box {
+      margin: 2rem auto;
+      text-align: center;
+    }
+
+    .q-block {
+      margin: 1.8rem 0 2.2rem;
+    }
+
+    .slider-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.7rem;
+      align-items: end;
+      margin-bottom: 0.35rem;
+    }
+
+    .slider-grid span {
+      font-size: 0.78rem;
+      text-align: center;
+      line-height: 1.15;
+      min-height: 2.1em;
+    }
+
+    .slider-grid span:first-child { text-align: left; }
+    .slider-grid span:last-child { text-align: right; }
+
+    .slider-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+      accent-color: black;
+      margin: 0;
+    }
+
+    /* Avant réponse : piste visible, mais pas de curseur ni de remplissage. */
+    input[type="range"].untouched {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: #d0d0d0;
+      outline: none;
+    }
+
+    input[type="range"].untouched::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 0;
+      height: 0;
+      border: none;
+    }
+
+    input[type="range"].untouched::-moz-range-thumb {
+      width: 0;
+      height: 0;
+      border: none;
+    }
+
+    .slider-value {
+      font-size: 0.85rem;
+      color: #444;
+      text-align: center;
+      min-height: 1.1rem;
+      margin-top: 0.35rem;
+    }
+  </style>
+</head>
+<body>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+const EXPERIMENT_ID = "gYXInaCtcNNJ";
+const experiment_start = Date.now();
+
+const test_stimuli = [
+  { stim_id: "1", file: "0000_A_DRY_DAY_K2_S4A18415_20250704_141000__rms0.100__chunk0008_fade.wav" },
+  { stim_id: "2", file: "0000_B_DRY_NIGHT_K2_S4A18415_20250701_031000__rms0.100__chunk0003_fade.wav" },
+  { stim_id: "3", file: "0000_C_WET_DAY_K2_S4A18415_20250902_151000__rms0.100__chunk0004_fade(1).wav" },
+  { stim_id: "4", file: "0000_D_WET_NIGHT_K2_S4A18415_20250901_051000__rms0.100__chunk0005_fade.wav" },
+  { stim_id: "5", file: "1111_E_DRY_DAY_OUS_S4A18461_20250703_151000__rms0.100__chunk0005_fade.wav" },
+  { stim_id: "6", file: "1111_F_DRY_NIGHT_OUS_S4A18461_20250703_041000__rms0.100__chunk0003_fade.wav" },
+  { stim_id: "7", file: "1111_G_WET_DAY_OUS_S4A18461_20250906_141000__rms0.100__chunk0005_fade.wav" },
+  { stim_id: "8", file: "1111_H_WET_NIGHT_OUS_S4A18461_20250906_021000__rms0.100__chunk0007_fade.wav" }
+];
+
+const catch_stimuli = [
+  { stim_id: "9", file: "catch_5.wav", correct_answer: "5", is_catch: true },
+  { stim_id: "10", file: "catch_8.wav", correct_answer: "8", is_catch: true }
+];
+
+const calm_labels = ["calme", "plutôt calme", "ni calme ni excitant", "plutôt excitant", "excitant"];
+const pleasant_labels = ["agréable", "plutôt agréable", "ni agréable ni désagréable", "plutôt désagréable", "désagréable"];
+
+// Randomisation complète des stimuli, catch inclus.
+const randomized_stimuli = jsPsych.randomization.shuffle([
+  ...test_stimuli.map(s => ({ ...s, is_catch: false })),
+  ...catch_stimuli
+]).map((s, i) => ({ ...s, presentation_order: i + 1 }));
+
+function elapsedMs() {
+  return Date.now() - experiment_start;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>'"]/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;"
+  }[c]));
+}
+
+function getRadioValue(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || "";
+}
+
+function updateSliderFill(slider) {
+  if (slider.classList.contains("untouched")) return;
+  const min = Number(slider.min);
+  const max = Number(slider.max);
+  const val = Number(slider.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  slider.style.background = `linear-gradient(to right, black 0%, black ${pct}%, #d0d0d0 ${pct}%, #d0d0d0 100%)`;
+}
+
+function activateSlider(slider, valueLabel, labels) {
+  slider.classList.remove("untouched");
+  updateSliderFill(slider);
+  valueLabel.textContent = labels[Number(slider.value) - 1];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// JSPSYCH
+// ═══════════════════════════════════════════════════════════════
+const jsPsych = initJsPsych({
+  show_progress_bar: true,
+  auto_update_progress_bar: true,
+  message_progress_bar: "",
+  on_finish: () => {
+    document.body.innerHTML = `
+      <main style="text-align:center;margin-top:20vh;font-family:Arial,sans-serif">
+        <h2>Merci, l'expérience est terminée.</h2>
+        <p>Vous pouvez fermer cette page.</p>
+      </main>`;
+  }
+});
+
+const subject_id = jsPsych.randomization.randomID(10);
+const filename = `${subject_id}.csv`;
+
+jsPsych.data.addProperties({
+  subject_id: subject_id,
+  experiment_id: EXPERIMENT_ID,
+  experiment_start_iso: new Date(experiment_start).toISOString(),
+  user_agent: navigator.userAgent,
+  browser_language: navigator.language,
+  screen_width: screen.width,
+  screen_height: screen.height
+});
+
+const timeline = [];
+
+// ═══════════════════════════════════════════════════════════════
+// FORMULAIRE PARTICIPANT
+// ═══════════════════════════════════════════════════════════════
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="panel">
+      <h2>Informations du participant</h2>
+
+      <div class="field">
+        <label>Genre</label>
+        <div class="radio-row">
+          <label><input type="radio" name="genre" value="femme"> femme</label>
+          <label><input type="radio" name="genre" value="homme"> homme</label>
+          <label><input type="radio" name="genre" value="non-binaire"> non-binaire</label>
+          <label><input type="radio" name="genre" value="préfère ne pas répondre"> préfère ne pas répondre</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="age">Âge</label>
+        <input type="text" id="age" autocomplete="off" inputmode="numeric">
+      </div>
+
+      <div class="field">
+        <label for="prolific_id">Votre ID Prolific</label>
+        <input type="text" id="prolific_id" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Où avez-vous grandi ?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="grew_up" value="Grande ville (plus de 500 000 habitants)"> Grande ville (&gt;500k)</label>
+          <label><input type="radio" name="grew_up" value="Ville moyenne ou petite (moins de 500 000 habitants)"> Ville moyenne/petite</label>
+          <label><input type="radio" name="grew_up" value="Zone périurbaine ou banlieue"> Périurbain/banlieue</label>
+          <label><input type="radio" name="grew_up" value="Campagne / zone rurale"> Campagne/rurale</label>
+          <label><input type="radio" name="grew_up" value="Zone de montagne"> Montagne</label>
+          <label><input type="radio" name="grew_up" value="Zone littorale ou insulaire"> Littorale/insulaire</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Où vivez-vous ?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="lives_in" value="Grande ville (plus de 500 000 habitants)"> Grande ville (&gt;500k)</label>
+          <label><input type="radio" name="lives_in" value="Ville moyenne ou petite (moins de 500 000 habitants)"> Ville moyenne/petite</label>
+          <label><input type="radio" name="lives_in" value="Zone périurbaine ou banlieue"> Périurbain/banlieue</label>
+          <label><input type="radio" name="lives_in" value="Campagne / zone rurale"> Campagne/rurale</label>
+          <label><input type="radio" name="lives_in" value="Zone de montagne"> Montagne</label>
+          <label><input type="radio" name="lives_in" value="Zone littorale ou insulaire"> Littorale/insulaire</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Êtes-vous déjà allé au Sénégal ?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="senegal_visited" value="oui"> oui</label>
+          <label><input type="radio" name="senegal_visited" value="non"> non</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="senegal_visited_where">Si oui, où ?</label>
+        <input type="text" id="senegal_visited_where" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Avez-vous déjà vécu au Sénégal ?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="senegal_lived" value="oui"> oui</label>
+          <label><input type="radio" name="senegal_lived" value="non"> non</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="senegal_lived_where">Si oui, où ?</label>
+        <input type="text" id="senegal_lived_where" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Avez-vous un casque ?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="headphones" value="oui"> oui</label>
+          <label><input type="radio" name="headphones" value="non"> non</label>
+        </div>
+      </div>
+
+      <div id="demo-error" class="error"></div>
+    </div>
+  `,
+  choices: ["SUIVANT"],
+  button_html: '<button class="btn-std">%choice%</button>',
+  on_load: () => {
+    const btn = document.querySelector(".jspsych-btn");
+    btn.addEventListener("click", (event) => {
+      event.stopImmediatePropagation();
+
+      const participant = {
+        genre: getRadioValue("genre"),
+        age: document.getElementById("age").value.trim(),
+        prolific_id: document.getElementById("prolific_id").value.trim(),
+        grew_up: getRadioValue("grew_up"),
+        lives_in: getRadioValue("lives_in"),
+        senegal_visited: getRadioValue("senegal_visited"),
+        senegal_visited_where: document.getElementById("senegal_visited_where").value.trim(),
+        senegal_lived: getRadioValue("senegal_lived"),
+        senegal_lived_where: document.getElementById("senegal_lived_where").value.trim(),
+        headphones: getRadioValue("headphones")
+      };
+
+      const required = [
+        participant.genre,
+        participant.age,
+        participant.prolific_id,
+        participant.grew_up,
+        participant.lives_in,
+        participant.senegal_visited,
+        participant.senegal_lived,
+        participant.headphones
+      ];
+
+      if (required.some(v => !v)) {
+        document.getElementById("demo-error").textContent = "Veuillez remplir tous les champs obligatoires.";
+        return;
+      }
+
+      if (!/^\d+$/.test(participant.age)) {
+        document.getElementById("demo-error").textContent = "Veuillez entrer l'âge sous forme de nombre.";
+        return;
+      }
+
+      jsPsych.data.addProperties(participant);
+
+      jsPsych.finishTrial({
+        trial_kind: "participant_info",
+        timestamp_ms: elapsedMs(),
+        ...participant
+      });
+    }, true);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INSTRUCTIONS
+// ═══════════════════════════════════════════════════════════════
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="panel">
+      <h2>Jugement de paysages sonores</h2>
+      <p>Vous allez écouter plusieurs paysages sonores de 5 secondes.</p>
+      <p>Un paysage sonore est un enregistrement réalisé dans un seul lieu et dans un seul environnement.</p>
+      <p>Après chaque son, vous répondrez à quelques questions.</p>
+      <p>Pour la saison, les sons ont été enregistrés au Sénégal, où l'on distingue ici deux saisons : saison sèche et saison humide.</p>
+      <p>Merci de réaliser cette expérience dans une pièce calme, avec un casque.</p>
+    </div>
+  `,
+  choices: ["SUIVANT"],
+  button_html: '<button class="btn-std">%choice%</button>',
+  data: { trial_kind: "instructions" }
+});
+
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="panel center">
+      <h2>L'expérience va commencer.</h2>
+      <p>La barre de progression avancera automatiquement à chaque nouvelle page.</p>
+    </div>
+  `,
+  choices: ["COMMENCER"],
+  button_html: '<button class="btn-std">%choice%</button>',
+  data: { trial_kind: "start" }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TRIALS AUDIO + QUESTIONS
+// ═══════════════════════════════════════════════════════════════
+function addStimulusTrials(stim) {
+  const safeFile = escapeHtml(stim.file);
+
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="panel center">
+        <h2>Écoute</h2>
+        <p><strong>Écoutez le paysage sonore une seule fois.</strong></p>
+        <div class="sound-box">
+          <button type="button" id="play-sound" class="btn-std">LIRE LE SON</button>
+          <div id="audio-status" class="status">Lecture non commencée.</div>
+          <audio id="trial-audio" preload="auto" src="${safeFile}"></audio>
+        </div>
+      </div>
+    `,
+    choices: ["QUESTIONS"],
+    button_html: '<button class="btn-std" disabled>%choice%</button>',
+    data: {
+      trial_kind: "audio",
+      stim_id: stim.stim_id,
+      stim_file: stim.file,
+      is_catch: stim.is_catch,
+      presentation_order: stim.presentation_order
+    },
+    on_load: () => {
+      const audio = document.getElementById("trial-audio");
+      const playBtn = document.getElementById("play-sound");
+      const nextBtn = document.querySelector(".jspsych-btn");
+      const status = document.getElementById("audio-status");
+      let started = false;
+      let ended = false;
+
+      playBtn.addEventListener("click", async () => {
+        if (started) return;
+        started = true;
+        playBtn.disabled = true;
+        status.textContent = "Lecture en cours...";
+        try {
+          await audio.play();
+        } catch (e) {
+          started = false;
+          playBtn.disabled = false;
+          status.textContent = "La lecture n'a pas démarré. Cliquez à nouveau sur LIRE LE SON.";
+        }
+      });
+
+      audio.addEventListener("ended", () => {
+        ended = true;
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        status.textContent = "Lecture terminée. Vous pouvez passer aux questions.";
+        nextBtn.disabled = false;
+      });
+
+      nextBtn.addEventListener("click", (event) => {
+        if (!ended) {
+          event.stopImmediatePropagation();
+          return;
+        }
+        event.stopImmediatePropagation();
+        jsPsych.finishTrial({
+          audio_completed: true,
+          timestamp_ms: elapsedMs()
+        });
+      }, true);
+    }
+  });
+
+  if (stim.is_catch) {
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `
+        <div class="panel">
+          <h2>Question</h2>
+          <div class="q-block">
+            <label class="q-label" for="catch-answer">Quel chiffre avez-vous entendu ?</label>
+            <input type="text" id="catch-answer" maxlength="2" autocomplete="off" inputmode="numeric">
+          </div>
+          <div id="catch-error" class="error"></div>
+        </div>
+      `,
+      choices: ["SUIVANT"],
+      button_html: '<button class="btn-std">%choice%</button>',
+      data: {
+        trial_kind: "catch_questions",
+        stim_id: stim.stim_id,
+        stim_file: stim.file,
+        is_catch: true,
+        correct_answer: stim.correct_answer,
+        presentation_order: stim.presentation_order
+      },
+      on_load: () => {
+        const input = document.getElementById("catch-answer");
+        const btn = document.querySelector(".jspsych-btn");
+        input.focus();
+
+        btn.addEventListener("click", (event) => {
+          event.stopImmediatePropagation();
+          const answer = input.value.trim();
+          if (!answer) {
+            document.getElementById("catch-error").textContent = "Veuillez entrer un chiffre.";
+            return;
+          }
+          jsPsych.finishTrial({
+            timestamp_ms: elapsedMs(),
+            catch_response: answer,
+            catch_correct: answer === stim.correct_answer
+          });
+        }, true);
+      }
+    });
+  } else {
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `
+        <div class="panel">
+          <h2>Questions</h2>
+
+          <div class="q-block">
+            <div class="q-label">Quel moment de la journée ce son vous évoque ?</div>
+            <div class="radio-row">
+              <label><input type="radio" name="moment" value="jour"> jour</label>
+              <label><input type="radio" name="moment" value="nuit"> nuit</label>
+            </div>
+          </div>
+
+          <div class="q-block">
+            <div class="q-label">Quelle saison ce son vous évoque ?</div>
+            <div class="radio-row">
+              <label><input type="radio" name="season" value="saison humide"> saison humide</label>
+              <label><input type="radio" name="season" value="saison sèche"> saison sèche</label>
+            </div>
+          </div>
+
+          <div class="q-block">
+            <div class="q-label">Ce son est-il calme ou excitant ?</div>
+            <div class="slider-grid">
+              ${calm_labels.map(label => `<span>${label}</span>`).join("")}
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="calm-slider" class="untouched" min="1" max="5" step="1" value="3">
+            </div>
+            <div id="calm-value" class="slider-value"></div>
+          </div>
+
+          <div class="q-block">
+            <div class="q-label">Ce son est-il agréable ou désagréable ?</div>
+            <div class="slider-grid">
+              ${pleasant_labels.map(label => `<span>${label}</span>`).join("")}
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="pleasant-slider" class="untouched" min="1" max="5" step="1" value="3">
+            </div>
+            <div id="pleasant-value" class="slider-value"></div>
+          </div>
+
+          <div id="question-error" class="error"></div>
+        </div>
+      `,
+      choices: ["SUIVANT"],
+      button_html: '<button class="btn-std" disabled>%choice%</button>',
+      data: {
+        trial_kind: "stimulus_questions",
+        stim_id: stim.stim_id,
+        stim_file: stim.file,
+        is_catch: false,
+        presentation_order: stim.presentation_order
+      },
+      on_load: () => {
+        const nextBtn = document.querySelector(".jspsych-btn");
+        const calmSlider = document.getElementById("calm-slider");
+        const pleasantSlider = document.getElementById("pleasant-slider");
+        const calmValue = document.getElementById("calm-value");
+        const pleasantValue = document.getElementById("pleasant-value");
+        const error = document.getElementById("question-error");
+
+        function allAnswered() {
+          return getRadioValue("moment") &&
+                 getRadioValue("season") &&
+                 !calmSlider.classList.contains("untouched") &&
+                 !pleasantSlider.classList.contains("untouched");
+        }
+
+        function refreshNextButton() {
+          nextBtn.disabled = !allAnswered();
+          if (allAnswered()) error.textContent = "";
+        }
+
+        document.querySelectorAll('input[name="moment"], input[name="season"]').forEach(input => {
+          input.addEventListener("change", refreshNextButton);
+        });
+
+        calmSlider.addEventListener("input", () => {
+          activateSlider(calmSlider, calmValue, calm_labels);
+          refreshNextButton();
+        });
+
+        pleasantSlider.addEventListener("input", () => {
+          activateSlider(pleasantSlider, pleasantValue, pleasant_labels);
+          refreshNextButton();
+        });
+
+        nextBtn.addEventListener("click", (event) => {
+          event.stopImmediatePropagation();
+          if (!allAnswered()) {
+            error.textContent = "Veuillez répondre à toutes les questions.";
+            return;
+          }
+
+          const calmCode = Number(calmSlider.value);
+          const pleasantCode = Number(pleasantSlider.value);
+          jsPsych.finishTrial({
+            timestamp_ms: elapsedMs(),
+            moment_response: getRadioValue("moment"),
+            season_response: getRadioValue("season"),
+            calm_code: calmCode,
+            calm_response: calm_labels[calmCode - 1],
+            pleasant_code: pleasantCode,
+            pleasant_response: pleasant_labels[pleasantCode - 1]
+          });
+        }, true);
+      }
+    });
+  }
+}
+
+randomized_stimuli.forEach(addStimulusTrials);
+
+// ═══════════════════════════════════════════════════════════════
+// SAUVEGARDE DATAPIPE
+// ═══════════════════════════════════════════════════════════════
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<p style="text-align:center">Fin de la tâche. Vos réponses vont être sauvegardées...</p>`,
+  choices: "NO_KEYS",
+  trial_duration: 800,
+  data: { trial_kind: "saving_message" }
+});
+
+timeline.push({
+  type: jsPsychPipe,
+  action: "save",
+  experiment_id: EXPERIMENT_ID,
+  filename: filename,
+  data_string: () => jsPsych.data.get().csv()
+});
+
+jsPsych.run(timeline);
+</script>
+</body>
+</html>
