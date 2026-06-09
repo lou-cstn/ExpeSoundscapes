@@ -201,12 +201,6 @@ const catch_stimuli = [
 const calm_labels = ["calme", "plutôt calme", "ni calme ni excitant", "plutôt excitant", "excitant"];
 const pleasant_labels = ["agréable", "plutôt agréable", "ni agréable ni désagréable", "plutôt désagréable", "désagréable"];
 
-// Randomisation complète des stimuli, catch inclus.
-const randomized_stimuli = jsPsych.randomization.shuffle([
-  ...test_stimuli.map(s => ({ ...s, is_catch: false })),
-  ...catch_stimuli
-]).map((s, i) => ({ ...s, presentation_order: i + 1 }));
-
 function elapsedMs() {
   return Date.now() - experiment_start;
 }
@@ -251,6 +245,12 @@ const jsPsych = initJsPsych({
       </main>`;
   }
 });
+
+// Randomisation complète des stimuli, catch inclus.
+const randomized_stimuli = jsPsych.randomization.shuffle([
+  ...test_stimuli.map(s => ({ ...s, is_catch: false })),
+  ...catch_stimuli
+]).map((s, i) => ({ ...s, presentation_order: i + 1 }));
 
 const subject_id = jsPsych.randomization.randomID(10);
 const filename = `${subject_id}.csv`;
