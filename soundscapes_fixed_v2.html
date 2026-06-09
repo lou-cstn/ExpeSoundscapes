@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <title>Jugement de paysages sonores</title>
+
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+  <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet"/>
+
+  <style>
+    body { background: white; color: black; font-family: Arial, Helvetica, sans-serif; }
+    .jspsych-display-element { background: white; }
+    .jspsych-content { max-width: 800px; }
+
+    /* ── Formulaire démo ── */
+    .demo-form { max-width: 580px; margin: 0 auto; text-align: left; }
+    .demo-form h2 { font-size: 1.15rem; margin-bottom: 1.5rem; }
+    .demo-field { margin-bottom: 1.3rem; }
+    .demo-field > label { display: block; font-size: .95rem; margin-bottom: .4rem; font-weight: bold; }
+    .demo-field input[type=text] {
+      width: 100%; padding: .4rem .6rem; font-size: 1rem;
+      border: 1px solid #aaa; border-radius: 0; box-sizing: border-box;
+    }
+    .demo-radio { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: .3rem; }
+    .demo-radio label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: .3rem; font-size: .9rem; }
+
+    /* ── Boutons génériques ── */
+    .btn-std {
+      margin-top: 1.5rem; padding: .6rem 2rem;
+      background: white; color: black; border: 2px solid black;
+      font-size: 1rem; font-family: Arial, sans-serif; cursor: pointer;
+    }
+    .btn-std:hover { background: black; color: white; }
+    .btn-std:disabled { opacity: .35; cursor: default; background: white; color: black; }
+
+    /* ── Trial audio ── */
+    .trial-wrap { text-align: center; max-width: 640px; margin: 0 auto; }
+    .trial-instruction { font-size: 1.05rem; margin-bottom: 2rem; }
+    .audio-player { margin: 1.5rem auto; }
+    .audio-player audio { width: 380px; }
+    .progress-label { font-size: .85rem; color: #666; margin-top: .5rem; }
+
+    /* ── Questions ── */
+    .questions-wrap { max-width: 600px; margin: 0 auto; text-align: left; }
+    .q-block { margin-bottom: 1.8rem; }
+    .q-label { font-weight: bold; font-size: .95rem; margin-bottom: .6rem; }
+    .q-radio { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .q-radio label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: .3rem; font-size: .9rem; }
+
+    /* Slider natif : labels lisibles + pas de position visible avant réponse */
+    .slider-block { width: 100%; margin-top: .55rem; }
+    .slider-labels {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      column-gap: .65rem;
+      align-items: start;
+      margin-bottom: .65rem;
+    }
+    .slider-labels span {
+      text-align: center;
+      font-size: .78rem;
+      line-height: 1.15;
+      color: #222;
+      white-space: normal;
+      hyphens: auto;
+      min-height: 2.1em;
+    }
+    .slider-labels span:first-child { text-align: left; }
+    .slider-labels span:last-child  { text-align: right; }
+
+    input[type=range].rating-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 28px;
+      cursor: pointer;
+      background: transparent;
+      margin: 0;
+      --fill-percent: 0%;
+    }
+    input[type=range].rating-slider:focus { outline: 2px solid #777; outline-offset: 4px; }
+    input[type=range].rating-slider::-webkit-slider-runnable-track {
+      height: 4px;
+      background: linear-gradient(
+        to right,
+        black 0%,
+        black var(--fill-percent),
+        #bdbdbd var(--fill-percent),
+        #bdbdbd 100%
+      );
+      border-radius: 2px;
+    }
+    input[type=range].rating-slider::-moz-range-track {
+      height: 4px;
+      background: #bdbdbd;
+      border-radius: 2px;
+    }
+    input[type=range].rating-slider::-moz-range-progress {
+      height: 4px;
+      background: black;
+      border-radius: 2px;
+    }
+    input[type=range].rating-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: black;
+      border: 2px solid black;
+      margin-top: -7px;
+    }
+    input[type=range].rating-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: black;
+      border: 2px solid black;
+    }
+
+    /* Avant interaction : aucun curseur visible, donc aucune position initiale perceptible */
+    input[type=range].slider-unanswered::-webkit-slider-thumb {
+      width: 0;
+      height: 0;
+      border: 0;
+      margin-top: 0;
+    }
+    input[type=range].slider-unanswered::-moz-range-thumb {
+      width: 0;
+      height: 0;
+      border: 0;
+    }
+    input[type=range].slider-unanswered::-moz-range-progress {
+      background: #bdbdbd;
+    }
+
+    /* Champ texte catch */
+    .catch-input {
+      font-size: 1.2rem; padding: .4rem .7rem; width: 140px;
+      border: 2px solid black; border-radius: 0; text-align: center;
+      display: block; margin: .5rem 0;
+    }
+    .err-msg { color: red; font-size: .85rem; min-height: 1.1rem; margin-top: .3rem; }
+
+
+  </style>
+</head>
+<body>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const EXPERIMENT_ID = "gYXInaCtcNNJ";
+const experiment_start = Date.now();
+
+const test_stimuli = [
+  { stim_id: "1", file: "0000_A_DRY_DAY_K2_S4A18415_20250704_141000__rms0.100__chunk0008_fade.wav",   randomBlock: "1" },
+  { stim_id: "2", file: "0000_B_DRY_NIGHT_K2_S4A18415_20250701_031000__rms0.100__chunk0003_fade.wav", randomBlock: "2" },
+  { stim_id: "3", file: "0000_C_WET_DAY_K2_S4A18415_20250902_151000__rms0.100__chunk0004_fade(1).wav",randomBlock: "3" },
+  { stim_id: "4", file: "0000_D_WET_NIGHT_K2_S4A18415_20250901_051000__rms0.100__chunk0005_fade.wav", randomBlock: "4" },
+  { stim_id: "5", file: "1111_E_DRY_DAY_OUS_S4A18461_20250703_151000__rms0.100__chunk0005_fade.wav",  randomBlock: "5" },
+  { stim_id: "6", file: "1111_F_DRY_NIGHT_OUS_S4A18461_20250703_041000__rms0.100__chunk0003_fade.wav",randomBlock: "6" },
+  { stim_id: "7", file: "1111_G_WET_DAY_OUS_S4A18461_20250906_141000__rms0.100__chunk0005_fade.wav",  randomBlock: "7" },
+  { stim_id: "8", file: "1111_H_WET_NIGHT_OUS_S4A18461_20250906_021000__rms0.100__chunk0007_fade.wav",randomBlock: "8" },
+];
+const catch_stimuli = [
+  { stim_id: "9",  file: "catch_5.wav", answer: "5", randomBlock: "9"  },
+  { stim_id: "10", file: "catch_8.wav", answer: "8", randomBlock: "10" },
+];
+const N_TOTAL = test_stimuli.length + catch_stimuli.length;  // pour barre de progression
+
+// ═══════════════════════════════════════════════════════════════
+// DONNÉES COLLECTÉES
+// ═══════════════════════════════════════════════════════════════
+let demo = {};
+let collected_rows = [];   // lignes CSV au fur et à mesure
+let trial_counter = 0;     // compte les stimuli entièrement terminés
+
+function ts() { return Date.now() - experiment_start; }
+
+// ═══════════════════════════════════════════════════════════════
+// CSV BUILDER
+// ═══════════════════════════════════════════════════════════════
+function buildCSV() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const gmt = `${now.getUTCFullYear()}-${pad(now.getUTCMonth()+1)}-${pad(now.getUTCDate())}_`
+            + `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+  const dur = ((Date.now() - experiment_start)/1000).toFixed(3);
+
+  const meta = `browser,version,screenWidth,screenHeight,OS,OS_lang,GMT_timestamp,local_timestamp,trial_file_version,link,duration_s\n`
+             + `jsPsych,,${screen.width},${screen.height},,${navigator.language},${gmt},${gmt},,GitHub Pages,${dur}\n\n`;
+
+  const cols = ["rowNo","type","trialText","trialTextPos","stim1","stimFormat","trialTextOptions",
+                "head","responseType","responseOptions","separator","required","button1",
+                "randomBlock","waitStimEnd","ITI_ms","timestamp","response","responseText","RT","responseCode"];
+
+  const empty = Object.fromEntries(cols.map(c=>[c,""]));
+
+  const rows = [];
+
+  // Toutes les lignes (démo + trials) sont déjà dans collected_rows
+  collected_rows.forEach(row => rows.push(row));
+
+  const csvRows = rows.map(r => cols.map(c => r[c]??'').join(','));
+  return meta + cols.join(',') + '\n' + csvRows.join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// jsPsych
+// ═══════════════════════════════════════════════════════════════
+const jsPsych = initJsPsych({
+  show_progress_bar: true,
+  auto_update_progress_bar: false,
+  message_progress_bar: '',
+  on_finish: () => {
+    document.body.innerHTML = `
+      <main style="text-align:center;margin-top:20vh;font-family:Arial,sans-serif">
+        <h2>Merci, l'expérience est terminée.</h2>
+        <p>Vous pouvez fermer cette page.</p>
+      </main>`;
+  }
+});
+
+const subject_id = jsPsych.randomization.randomID(10);
+const filename = `${subject_id}.csv`;
+
+function updateProgressBar() {
+  const progress = Math.min(1, Math.max(0, trial_counter / N_TOTAL));
+  jsPsych.setProgressBar(progress);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════════════════════════════
+const timeline = [];
+
+// ── Formulaire démographique ─────────────────────────────────
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="demo-form">
+      <h2>Informations du participant</h2>
+      <div class="demo-field">
+        <label>Genre</label>
+        <div class="demo-radio">
+          <label><input type="radio" name="genre" value="femme"> femme</label>
+          <label><input type="radio" name="genre" value="homme"> homme</label>
+          <label><input type="radio" name="genre" value="non-binaire"> non-binaire</label>
+          <label><input type="radio" name="genre" value="préfère ne pas répondre"> préfère ne pas répondre</label>
+        </div>
+      </div>
+      <div class="demo-field">
+        <label>Age (entrez un nombre)</label>
+        <input type="text" id="d-age">
+      </div>
+      <div class="demo-field">
+        <label>Votre ID Prolific ?</label>
+        <input type="text" id="d-prolific">
+      </div>
+      <div class="demo-field">
+        <label>Où avez-vous grandi ?</label>
+        <div class="demo-radio">
+          <label><input type="radio" name="grandi" value="Grande ville (plus de 500 000 habitants)"> Grande ville (&gt;500k)</label>
+          <label><input type="radio" name="grandi" value="Ville moyenne ou petite (moins de 500 000 habitants)"> Ville moyenne/petite</label>
+          <label><input type="radio" name="grandi" value="Zone périurbaine ou banlieue"> Périurbain/banlieue</label>
+          <label><input type="radio" name="grandi" value="Campagne / zone rurale"> Campagne/rurale</label>
+          <label><input type="radio" name="grandi" value="Zone de montagne"> Montagne</label>
+          <label><input type="radio" name="grandi" value="Zone littorale ou insulaire"> Littorale/insulaire</label>
+        </div>
+      </div>
+      <div class="demo-field">
+        <label>Où vivez-vous ?</label>
+        <div class="demo-radio">
+          <label><input type="radio" name="vit" value="Grande ville (plus de 500 000 habitants)"> Grande ville (&gt;500k)</label>
+          <label><input type="radio" name="vit" value="Ville moyenne ou petite (moins de 500 000 habitants)"> Ville moyenne/petite</label>
+          <label><input type="radio" name="vit" value="Zone périurbaine ou banlieue"> Périurbain/banlieue</label>
+          <label><input type="radio" name="vit" value="Campagne / zone rurale"> Campagne/rurale</label>
+          <label><input type="radio" name="vit" value="Zone de montagne"> Montagne</label>
+          <label><input type="radio" name="vit" value="Zone littorale ou insulaire"> Littorale/insulaire</label>
+        </div>
+      </div>
+      <div class="demo-field">
+        <label>Êtes-vous déjà allé au Sénégal ?</label>
+        <div class="demo-radio">
+          <label><input type="radio" name="senegal_visite" value="oui"> oui</label>
+          <label><input type="radio" name="senegal_visite" value="non"> non</label>
+        </div>
+      </div>
+      <div class="demo-field">
+        <label>SI oui, où ?</label>
+        <input type="text" id="d-senegal-ou-visite">
+      </div>
+      <div class="demo-field">
+        <label>Avez-vous déjà vécu au Sénégal ?</label>
+        <div class="demo-radio">
+          <label><input type="radio" name="senegal_vecu" value="oui"> oui</label>
+          <label><input type="radio" name="senegal_vecu" value="non"> non</label>
+        </div>
+      </div>
+      <div class="demo-field">
+        <label>SI oui, où ?</label>
+        <input type="text" id="d-senegal-ou-vecu">
+      </div>
+      <div class="demo-field">
+        <label>Avez-vous un casque?</label>
+        <div class="demo-radio">
+          <label><input type="radio" name="casque" value="oui"> oui</label>
+          <label><input type="radio" name="casque" value="non"> non</label>
+        </div>
+      </div>
+      <div id="demo-err" class="err-msg"></div>
+    </div>`,
+  choices: ["SUIVANT"],
+  button_html: '<button class="btn-std">SUIVANT</button>',
+  on_load() {
+    document.querySelector('.jspsych-btn').addEventListener('click', e => {
+      e.stopImmediatePropagation();
+      const g = v => document.querySelector(`input[name=${v}]:checked`)?.value;
+      const genre = g('genre'), grandi = g('grandi'), vit = g('vit');
+      const senegal_visite = g('senegal_visite'), senegal_vecu = g('senegal_vecu'), casque = g('casque');
+      const age = document.getElementById('d-age').value.trim();
+      const prolific = document.getElementById('d-prolific').value.trim();
+      const required = [genre, age, prolific, grandi, vit, senegal_visite, senegal_vecu, casque];
+      if (required.some(v => !v)) {
+        document.getElementById('demo-err').textContent = 'Veuillez remplir tous les champs obligatoires.';
+        return;
+      }
+      demo = {
+        genre, age, prolific, grandi, vit,
+        senegal_visite, senegal_ou_visite: document.getElementById('d-senegal-ou-visite').value.trim(),
+        senegal_vecu,  senegal_ou_vecu:   document.getElementById('d-senegal-ou-vecu').value.trim(),
+        casque
+      };
+
+      // Écrire les lignes démo immédiatement (évite les NA si buildCSV appelé trop tôt)
+      const dcols = ["rowNo","type","trialText","trialTextPos","stim1","stimFormat","trialTextOptions",
+                    "head","responseType","responseOptions","separator","required","button1",
+                    "randomBlock","waitStimEnd","ITI_ms","timestamp","response","responseText","RT","responseCode"];
+      const dempty = () => Object.fromEntries(dcols.map(c=>[c,""]));
+      const demoRows = [
+        { rowNo:2,  head:"Genre",                           rType:"likert", rOpts:"femme;homme;non-binaire;préfère ne pas répondre",   sep:"1", req:"1", val: demo.genre,                       code:"1"  },
+        { rowNo:3,  head:"Age (entrez un nombre)",           rType:"box",   rOpts:"",                                                  sep:"1", req:"1", val: demo.age,                         code:"NA" },
+        { rowNo:4,  head:"Votre ID Prolific ?",              rType:"box",   rOpts:"",                                                  sep:"1", req:"1", val: demo.prolific,                    code:"NA" },
+        { rowNo:5,  head:"Où avez-vous grandi ?",            rType:"likert", rOpts:"Grande ville (plus de 500 000 habitants);Ville moyenne ou petite (moins de 500 000 habitants);Zone périurbaine ou banlieue;Campagne / zone rurale;Zone de montagne;Zone littorale ou insulaire", sep:"1", req:"1", val: demo.grandi, code:"1" },
+        { rowNo:6,  head:"Où vivez-vous ?",                  rType:"likert", rOpts:"Grande ville (plus de 500 000 habitants);Ville moyenne ou petite (moins de 500 000 habitants);Zone périurbaine ou banlieue;Campagne / zone rurale;Zone de montagne;Zone littorale ou insulaire", sep:"1", req:"1", val: demo.vit, code:"1" },
+        { rowNo:7,  head:"Êtes-vous déjà allé au Sénégal ?", rType:"likert", rOpts:"oui;non",                                         sep:"1", req:"1", val: demo.senegal_visite,              code:"1"  },
+        { rowNo:8,  head:"SI oui, où ?",                     rType:"box",   rOpts:"",                                                  sep:"1", req:"",  val: demo.senegal_ou_visite||"NA",    code:"NA" },
+        { rowNo:9,  head:"Avez-vous déjà vécu au Sénégal ?", rType:"likert", rOpts:"oui;non",                                         sep:"1", req:"1", val: demo.senegal_vecu,                code:"1"  },
+        { rowNo:10, head:"SI oui, où ?",                     rType:"box",   rOpts:"",                                                  sep:"1", req:"",  val: demo.senegal_ou_vecu||"NA",      code:"NA" },
+        { rowNo:11, head:"Avez-vous un casque?",             rType:"likert", rOpts:"oui;non",                                         sep:"1", req:"1", val: demo.casque,                      code:"1"  },
+      ];
+      const dts = Date.now() - experiment_start;
+      demoRows.forEach(f => {
+        const r = dempty();
+        r.rowNo = `"${f.rowNo}"`;
+        r.type = "form";
+        r.head = f.head;
+        r.responseType = f.rType;
+        r.responseOptions = f.rOpts;
+        r.separator = f.sep;
+        r.required = f.req ? `"${f.req}"` : "";
+        r.timestamp = dts;
+        r.response = f.val ?? "";
+        r.responseCode = f.code === "NA" ? "NA" : `"${f.code}"`;
+        collected_rows.push(r);
+      });
+
+      jsPsych.finishTrial();
+    }, true);
+  }
+});
+
+// ── Instructions ─────────────────────────────────────────────
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div style="max-width:640px;margin:0 auto">
+      <h2>Jugement de paysages sonores</h2>
+      <p>Vous allez écouter 8 paysages sonores de 5 sec.</p>
+      <p>Un paysage sonore est un enregistrement sonore réalisé dans un seul lieu et dans un seul environnement.</p>
+      <p>Après l'écoute du son, vous appuierez sur le bouton <strong>QUESTIONS</strong> et plusieurs questions à choix multiples vous seront présentées.</p>
+      <p>Vous allez devoir notamment choisir la saison où vous pensez que l'enregistrement a été fait. Il faut savoir que ces sons ont été enregistrés au Sénégal et qu'il y a seulement deux saisons : saison sèche et saison humide. Ces sons viennent d'un endroit loin d'un campement.</p>
+      <p>Réalisez cette expérience dans une pièce calme et avec un casque.</p>
+    </div>`,
+  choices: ["SUIVANT"],
+  button_html: '<button class="btn-std">SUIVANT</button>'
+});
+
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div style="max-width:600px;margin:0 auto;text-align:center">
+      <h2>L'expérience va commencer.</h2>
+      <p>Vous pouvez observer votre progression sur la barre bleue en haut de votre écran.</p>
+    </div>`,
+  choices: ["SUIVANT"],
+  button_html: '<button class="btn-std">SUIVANT</button>'
+});
+
+// ═══════════════════════════════════════════════════════════════
+// FONCTION : trial audio + questions
+// ═══════════════════════════════════════════════════════════════
+function makeAudioTrial(stim, isCatch) {
+  const cols = ["rowNo","type","trialText","trialTextPos","stim1","stimFormat","trialTextOptions",
+                "head","responseType","responseOptions","separator","required","button1",
+                "randomBlock","waitStimEnd","ITI_ms","timestamp","response","responseText","RT","responseCode"];
+  const empty = () => Object.fromEntries(cols.map(c=>[c,""]));
+  const rowBase = 13 + parseInt(stim.stim_id) * 5;
+
+  // ── Page audio ──
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="trial-wrap">
+        <div class="trial-instruction"><b>Ecoutez ce paysage sonore puis répondez aux questions.</b></div>
+        <div class="audio-player">
+          <audio id="trial-audio" controls>
+            <source src="${stim.file}" type="audio/wav">
+          </audio>
+          <div class="progress-label" id="audio-status">En attente de lecture...</div>
+        </div>
+      </div>`,
+    choices: ["QUESTIONS"],
+    button_html: '<button class="btn-std" id="btn-questions" disabled>QUESTIONS</button>',
+    on_load() {
+      const audio = document.getElementById('trial-audio');
+      const btn   = document.getElementById('btn-questions');
+      const status = document.getElementById('audio-status');
+
+      function unlockQuestions() {
+        btn.disabled = false;
+        audio.controls = false;
+        audio.pause();
+        status.textContent = 'Lecture terminée — appuyez sur Espace ou cliquez sur QUESTIONS.';
+      }
+      audio.addEventListener('ended', unlockQuestions);
+      audio.addEventListener('play', () => {
+        if (!btn.disabled) {
+          audio.pause();
+          audio.currentTime = audio.duration || audio.currentTime;
+          return;
+        }
+        status.textContent = 'Lecture en cours...';
+      });
+
+      function submitAudioTrial() {
+        if (btn.disabled) return;
+        const r = empty();
+        r.rowNo = `"${rowBase}"`;
+        r.type = "test";
+        r.trialText = "<b> Ecoutez ce paysage sonore puis répondez aux questions. </b>";
+        r.trialTextPos = "above";
+        r.stim1 = stim.file.replace('.wav','');
+        r.stimFormat = ".wav";
+        r.trialTextOptions = "allTrial";
+        r.button1 = "QUESTIONS";
+        r.randomBlock = `"${stim.randomBlock}"`;
+        r.waitStimEnd = `"1"`;
+        r.timestamp = ts();
+        r.response = `"1"`;
+        r.responseText = "QUESTIONS";
+        r.RT = Math.round(audio.currentTime * 1000);
+        collected_rows.push(r);
+        jsPsych.finishTrial();
+      }
+
+      // Espace : lance/pause l'audio, ou valide si terminé
+      const spaceHandler = (e) => {
+        if (e.code !== 'Space') return;
+        e.preventDefault();
+        if (!btn.disabled) {
+          document.removeEventListener('keydown', spaceHandler);
+          submitAudioTrial();
+        } else if (audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      };
+      document.addEventListener('keydown', spaceHandler);
+
+      // Clic bouton QUESTIONS
+      document.querySelector('.jspsych-btn').addEventListener('click', e => {
+        if (btn.disabled) { e.stopImmediatePropagation(); return; }
+        document.removeEventListener('keydown', spaceHandler);
+        submitAudioTrial();
+      }, true);
+    },
+    on_finish() {}
+  });
+
+  // ── Page questions ──
+  if (isCatch) {
+    // Catch : une seule question texte
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `
+        <div class="questions-wrap">
+          <div class="q-block">
+            <div class="q-label">Quel chiffre avez-vous entendu ?</div>
+            <input type="text" id="catch-inp" class="catch-input" maxlength="2" autocomplete="off">
+            <div class="err-msg" id="catch-err"></div>
+          </div>
+        </div>`,
+      choices: ["SUIVANT"],
+      button_html: '<button class="btn-std">SUIVANT</button>',
+      on_load() {
+        document.getElementById('catch-inp').focus();
+        document.querySelector('.jspsych-btn').addEventListener('click', e => {
+          e.stopImmediatePropagation();
+          const val = document.getElementById('catch-inp').value.trim();
+          if (!val) { document.getElementById('catch-err').textContent = 'Veuillez entrer un chiffre.'; return; }
+          const r = empty();
+          r.rowNo = `"${rowBase+1}"`;
+          r.type = "form";
+          r.head = "Quel chiffre avez-vous entendu ?";
+          r.responseType = "box";
+          r.required = `"1"`;
+          r.randomBlock = `"${stim.randomBlock}"`;
+          r.ITI_ms = "0";
+          r.timestamp = ts();
+          r.response = `"${val}"`;
+          r.responseText = "";
+          r.RT = "";
+          r.responseCode = "NA";
+          collected_rows.push(r);
+          trial_counter++;
+          updateProgressBar();
+          jsPsych.finishTrial();
+        }, true);
+      }
+    });
+  } else {
+    // 4 questions sur une seule page
+    const labelsCalme = ["calme","plutôt calme","ni calme ni excitant","plutôt excitant","excitant"];
+    const labelsAgr   = ["agréable","plutôt agréable","ni agréable ni désagréable","plutôt désagréable","désagréable"];
+
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `
+        <div class="questions-wrap">
+          <div class="q-block">
+            <div class="q-label">Quel moment de la journée ce son vous évoque ?</div>
+            <div class="q-radio">
+              <label><input type="radio" name="moment" value="jour"> jour</label>
+              <label><input type="radio" name="moment" value="nuit"> nuit</label>
+            </div>
+          </div>
+          <div class="q-block">
+            <div class="q-label">Quelle saison ce son vous évoque ?</div>
+            <div class="q-radio">
+              <label><input type="radio" name="saison" value="saison humide"> saison humide</label>
+              <label><input type="radio" name="saison" value="saison sèche"> saison sèche</label>
+            </div>
+          </div>
+          <div class="q-block">
+            <div class="q-label">Ce son est-il ?</div>
+            <div class="slider-block">
+              <div class="slider-labels">${labelsCalme.map(l=>`<span>${l}</span>`).join('')}</div>
+              <input type="range" id="sc" class="rating-slider slider-unanswered" min="1" max="5" step="1" value="3" data-answered="0" aria-label="Calme à excitant">
+            </div>
+          </div>
+          <div class="q-block">
+            <div class="q-label">Ce son est-il ?</div>
+            <div class="slider-block">
+              <div class="slider-labels">${labelsAgr.map(l=>`<span>${l}</span>`).join('')}</div>
+              <input type="range" id="sa" class="rating-slider slider-unanswered" min="1" max="5" step="1" value="3" data-answered="0" aria-label="Agréable à désagréable">
+            </div>
+          </div>
+          <div class="err-msg" id="q-err"></div>
+        </div>`,
+      choices: ["SUIVANT"],
+      button_html: '<button class="btn-std" id="btn-next-q" disabled>SUIVANT</button>',
+      on_load() {
+        const btn = document.getElementById('btn-next-q');
+        const err = document.getElementById('q-err');
+        const sc = document.getElementById('sc');
+        const sa = document.getElementById('sa');
+
+        function updateSliderFill(slider) {
+          const min = Number(slider.min);
+          const max = Number(slider.max);
+          const value = Number(slider.value);
+          const pct = ((value - min) / (max - min)) * 100;
+          slider.style.setProperty('--fill-percent', `${pct}%`);
+        }
+
+        function markSliderAnswered(slider) {
+          slider.dataset.answered = '1';
+          slider.classList.remove('slider-unanswered');
+          updateSliderFill(slider);
+          updateNextButtonState();
+        }
+
+        function updateNextButtonState() {
+          const moment = document.querySelector('input[name=moment]:checked')?.value;
+          const saison = document.querySelector('input[name=saison]:checked')?.value;
+          const slidersAnswered = sc.dataset.answered === '1' && sa.dataset.answered === '1';
+          btn.disabled = !(moment && saison && slidersAnswered);
+          if (!btn.disabled) err.textContent = '';
+        }
+
+        [sc, sa].forEach(slider => {
+          slider.style.setProperty('--fill-percent', '0%');
+          ['pointerdown', 'mousedown', 'touchstart', 'input', 'change', 'keydown'].forEach(evt => {
+            slider.addEventListener(evt, () => markSliderAnswered(slider));
+          });
+        });
+        document.querySelectorAll('input[name=moment], input[name=saison]').forEach(el => {
+          el.addEventListener('change', updateNextButtonState);
+        });
+        updateNextButtonState();
+
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          const moment = document.querySelector('input[name=moment]:checked')?.value;
+          const saison = document.querySelector('input[name=saison]:checked')?.value;
+          if (btn.disabled || !moment || !saison || sc.dataset.answered !== '1' || sa.dataset.answered !== '1') {
+            err.textContent = 'Veuillez répondre à toutes les questions.';
+            return;
+          }
+          const calmeVal = parseInt(sc.value);
+          const agrVal   = parseInt(sa.value);
+          const t = ts();
+          [
+            { qi:1, head:"Quel moment de la journée ce son vous évoque ?", rType:"likert", rOpts:"jour;nuit", val:moment, code:moment==='jour'?'1':'2' },
+            { qi:2, head:"Quelle saison ce son vous évoque ?", rType:"likert", rOpts:"saison humide;saison sèche", val:saison, code:saison==='saison humide'?'1':'2' },
+            { qi:3, head:"Ce son est-il ?", rType:"slider", rOpts:"calme_plutôt calme_ni calme ni excitant_plutôt excitant_excitant;hideMinMax;hideStart", val:labelsCalme[calmeVal-1], code:calmeVal },
+            { qi:4, head:"Ce son est-il ?", rType:"slider", rOpts:"agréable_plutôt agréable_ni agréable ni désagréable_plutôt désagréable_désagréable;hideMinMax;hideStart", val:labelsAgr[agrVal-1], code:agrVal },
+          ].forEach(q => {
+            const r = empty();
+            r.rowNo = `"${rowBase+q.qi}"`; r.type = "form"; r.head = q.head;
+            r.responseType = q.rType; r.responseOptions = q.rOpts;
+            r.separator = `"1"`; r.required = `"1"`;
+            r.randomBlock = `"${stim.randomBlock}"`; r.ITI_ms = "0";
+            r.timestamp = t; r.response = q.val; r.responseCode = `"${q.code}"`;
+            collected_rows.push(r);
+          });
+          trial_counter++;
+          updateProgressBar();
+          jsPsych.finishTrial();
+        }, true);
+      }
+    });
+  }
+}
+// ── Mélange et insertion trials ───────────────────────────────
+const all_stimuli = jsPsych.randomization.shuffle([
+  ...test_stimuli.map(s => ({...s, isCatch: false})),
+  ...catch_stimuli.map(s => ({...s, isCatch: true}))
+]);
+
+all_stimuli.forEach(stim => makeAudioTrial(stim, stim.isCatch));
+
+// ── Sauvegarde ────────────────────────────────────────────────
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<p style="text-align:center">Fin de la tâche. Vos réponses vont être sauvegardées...</p>`,
+  choices: "NO_KEYS",
+  trial_duration: 800,
+  on_load: () => jsPsych.setProgressBar(1)
+});
+
+timeline.push({
+  type: jsPsychPipe,
+  action: "save",
+  experiment_id: EXPERIMENT_ID,
+  filename: filename,
+  data_string: () => buildCSV()
+});
+
+jsPsych.run(timeline);
+</script>
+</body>
+</html>
