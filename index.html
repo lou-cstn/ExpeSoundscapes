@@ -453,7 +453,7 @@ function addStimulusTrials(stim) {
     stimulus: `
       <div class="panel center">
         <h2>Écoute</h2>
-        <p><strong>Écoutez le paysage sonore puis passez aux questions.</strong></p>
+        <p><strong>Écoutez le paysage sonore.</strong></p>
         <div class="sound-box">
           <button type="button" id="play-sound" class="btn-std">LIRE LE SON</button>
           <div id="audio-status" class="status">Lecture non commencée.</div>
@@ -461,8 +461,7 @@ function addStimulusTrials(stim) {
         </div>
       </div>
     `,
-    choices: ["QUESTIONS"],
-    button_html: '<button class="jspsych-btn btn-std" disabled>%choice%</button>',
+    choices: [],
     data: {
       trial_kind: "audio",
       stim_id: stim.stim_id,
@@ -473,7 +472,6 @@ function addStimulusTrials(stim) {
     on_load: () => {
       const audio = document.getElementById("trial-audio");
       const playBtn = document.getElementById("play-sound");
-      const nextBtn = document.querySelector("#jspsych-html-button-response-button-0 button");
       const status = document.getElementById("audio-status");
       let started = false;
       let ended = false;
@@ -493,12 +491,14 @@ function addStimulusTrials(stim) {
       });
 
       audio.addEventListener("ended", () => {
-        ended = true;
         audio.pause();
         audio.removeAttribute("src");
         audio.load();
-        status.textContent = "Lecture terminée. Vous pouvez passer aux questions.";
-        nextBtn.disabled = false;
+      
+        jsPsych.finishTrial({
+          audio_completed: true,
+          timestamp_ms: elapsedMs()
+        });
       });
 
       nextBtn.addEventListener("click", (event) => {
